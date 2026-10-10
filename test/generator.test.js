@@ -95,14 +95,25 @@ test('late arrival bats last (3.2.6) and plays only from arrival', () => {
   assert.ok(res.lineup.innings[2][12]);
 });
 
-test('call-ups never pitch, in any division', () => {
-  for (const code of ['8U', '11U', '13U']) {
+test('call-ups never pitch where players pitch (11U and up, 4.6, D25)', () => {
+  for (const code of ['11U', '13U', '15U']) {
     for (let seed = 0; seed < 40; seed++) {
       const players = roster(12, (i) => ({ callUp: i >= 9, canPitch: i < 6 || i >= 9 }));
       const { lineup } = generateLineup({ division: code, players, seed, candidates: 5 });
       for (const row of lineup.innings) for (const id of [10, 11, 12]) assert.notEqual(row[id], 'P');
     }
   }
+});
+
+test('in 7U-9U a call-up may play the P fielding spot (D25)', () => {
+  let seen = false;
+  for (let seed = 0; seed < 60 && !seen; seed++) {
+    const players = roster(12, (i) => ({ callUp: i >= 9 }));
+    const res = generateLineup({ division: '8U', players, seed, candidates: 5 });
+    assert.equal(validateLineup({ division: '8U', players, lineup: res.lineup }).ok, true);
+    seen = res.lineup.innings.some((row) => [10, 11, 12].some((id) => row[id] === 'P'));
+  }
+  assert.ok(seen, 'a call-up should sometimes be placed at P in 8U');
 });
 
 test('preferred positions are honoured more often than chance', () => {

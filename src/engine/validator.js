@@ -3,6 +3,7 @@
 //   D1  4.2 and 4.3 are satisfied if met by the end of each inning.
 //   A5  "each player" in 4.3 means every player on hand that inning, benched or not.
 //   A6  4.1 and 4.2 apply to all divisions; 4.3 to 13U and below.
+//   D25 4.6 (call-ups can't pitch) applies only where players pitch (11U and up).
 
 import { getDivision, fieldPositions, isOutfield, SIT, INFIELD, ALL_OUTFIELD } from './divisions.js';
 import { displayName, isPresent, cantPlay } from './players.js';
@@ -99,7 +100,7 @@ export function validateLineup({ division: code, players, lineup }) {
       // pitching limits
       if (pos === 'P') {
         const pl = byId.get(p.id);
-        if (pl.callUp) err('4.6', `Call-up ${name(p.id)} is pitching in inning ${inn}; call-ups can't pitch.`, { inning: inn, players: [p.id] });
+        if (pl.callUp && div.playerPitching) err('4.6', `Call-up ${name(p.id)} is pitching in inning ${inn}; call-ups can't pitch.`, { inning: inn, players: [p.id] });
         if (div.playerPitching) {
           const list_ = pitches.get(p.id);
           if (div.pitchMax && list_.length === div.pitchMax + 1) err('pitch', `${name(p.id)} pitches ${list_.length} innings (${div.code} max ${div.pitchMax}).`, { inning: inn, players: [p.id] });

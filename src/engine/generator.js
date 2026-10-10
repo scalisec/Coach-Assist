@@ -212,8 +212,8 @@ function attemptOnce(div, players, locks, rng) {
     const ofGroup = ofPool.slice(0, openOF.length);
     const ifGroup = ofPool.slice(openOF.length);
     const prevRow = k > 0 ? innings[k - 1] : null;
-    const a1 = assign(ifGroup, openIF, prevRow, rng);
-    const a2 = assign(ofGroup, openOF, prevRow, rng);
+    const a1 = assign(ifGroup, openIF, prevRow, rng, div.playerPitching);
+    const a2 = assign(ofGroup, openOF, prevRow, rng, div.playerPitching);
     if (!a1 || !a2) return { ok: false, reason: 'restrictions' };
     Object.assign(row, a1, a2);
 
@@ -234,7 +234,7 @@ function comboLeft(div, id, catches, pitches) {
 
 // Match players to positions: can't-play is a hard limit; preferred and "not the same
 // spot as last inning" are tried first.
-function assign(group, positions, prevRow, rng) {
+function assign(group, positions, prevRow, rng, noCallUpPitching) {
   const out = {};
   const used = new Set();
   const order = rng.shuffle(positions);
@@ -243,7 +243,7 @@ function assign(group, positions, prevRow, rng) {
     if (i === order.length) return true;
     const pos = order[i];
     const cands = group
-      .filter((p) => !used.has(p.id) && !cantPlay(p, pos) && !(pos === 'P' && p.callUp)) // 4.6, A18
+      .filter((p) => !used.has(p.id) && !cantPlay(p, pos) && !(noCallUpPitching && pos === 'P' && p.callUp)) // 4.6, D25
       .sort((a, b) => rank(a, pos) - rank(b, pos));
     for (const p of cands) {
       used.add(p.id); out[p.id] = pos;

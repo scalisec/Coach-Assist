@@ -13,7 +13,7 @@ Stage 1 of 6: **rules engine** (no screens yet).
 | Generator | `src/engine/generator.js` | Builds many random lineups that obey the hard rules, scores them (variety, preferences, catcher pairs, balance) and returns the best; supports locks, mid-game changes, late arrivals, call-ups, options |
 | Batting order | `src/engine/batting.js` | Season rotation: last game's bottom third bats first; newcomers after regulars; late arrivals last |
 
-Rule interpretations follow the project's Decisions & Assumptions Log (D1–D23, A1–A18).
+Rule interpretations follow the project's Decisions & Assumptions Log (D1–D25, A1–A17).
 
 ## Tests
 
