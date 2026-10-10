@@ -2,6 +2,7 @@ import { h, header, icon, toast, openSheet, segmented, selectField } from '../ui
 import { store } from '../store.js';
 import { validateLineup } from '../../engine/index.js';
 import { go, rerender } from '../main.js';
+import { gameActions } from './game.js';
 import {
   activePlayers, gamePlayers, generateFor, check, inningsCount, presentIn, spotsFor, swapCell, toggleLock, isLocked,
   midGameChange, summaryRows, displayShort, fullName, gameTitle, formatDate, cellClass, SIT, getDivision,
@@ -142,6 +143,7 @@ export function lineupView(id) {
         h('span', {}, h('i', { style: 'background:var(--of-bg)' }), 'Outfield'),
         h('span', {}, h('i', { style: 'background:var(--c-bg)' }), 'Catcher'),
         h('span', {}, h('i', { style: 'background:var(--sit-bg)' }), 'Sits')),
+      gameActions(game, team, { onReset: () => { undoStacks.delete(id); editing.delete(id); go(`#/game/${id}/setup`); } }),
       h('div', { class: 'footer-bar' },
         h('a', { class: 'btn', href: `#/game/${id}/summary` }, 'Player summary'),
         h('a', { class: 'btn primary', href: `#/game/${id}/export`, 'data-test': 'to-export' }, 'Score sheet PDF'))));

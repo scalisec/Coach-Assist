@@ -32,7 +32,7 @@ const NAV = [
   ['home', '#/home', 'Home', 'home'],
   ['roster', '#/roster', 'Roster', 'roster'],
   ['lineup', '#/lineup', 'Lineup', 'lineup'],
-  ['saved', '#/saved', 'Saved', 'saved'],
+  ['saved', '#/saved', 'Games', 'saved'],
   ['settings', '#/settings', 'Settings', 'settings'],
 ];
 
@@ -71,7 +71,16 @@ function drawNav(active, show) {
   nav.hidden = !show;
   if (!show) return;
   nav.replaceChildren(h('div', { class: 'inner' },
-    NAV.map(([key, href, label, ic]) => h('a', { href, 'aria-current': key === active ? 'page' : null }, icon(ic), label))));
+    NAV.map(([key, href, label, ic]) => h('a', { href, 'data-nav': key, 'aria-current': key === active ? 'page' : null, onclick: (e) => navTap(e, href) }, icon(ic), label))));
+}
+
+// Bottom-bar taps always do something: close any open sheet, then show the tab from the top,
+// even when the address is already that tab (a plain link would do nothing then).
+function navTap(e, href) {
+  e.preventDefault();
+  document.querySelectorAll('dialog[open]').forEach((d) => { d.close(); d.remove(); });
+  go(href);
+  window.scrollTo(0, 0);
 }
 
 export function go(hash) {

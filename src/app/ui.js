@@ -85,7 +85,13 @@ export function openSheet(title, content, { center = false } = {}) {
     center ? null : h('div', { class: 'grip' }),
     h('h2', {}, title),
     content(close)));
-  dlg.addEventListener('click', (e) => { if (e.target === dlg) close(); });
+  dlg.addEventListener('click', (e) => {
+    if (e.target !== dlg) return;
+    close();
+    // a tap on the bottom bar behind the sheet should also open that tab, not just close the sheet
+    const under = document.elementFromPoint(e.clientX, e.clientY)?.closest('#nav a');
+    if (under) under.click();
+  });
   dlg.addEventListener('cancel', (e) => { e.preventDefault(); close(); });
   document.body.append(dlg);
   dlg.showModal();

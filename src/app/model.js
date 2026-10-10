@@ -42,9 +42,9 @@ export function newGame(state, team) {
   const nums = games.map((g) => Number(g.gameNo) || 0);
   return {
     id: uid('g'), teamId: team.id, createdAt: Date.now(), updatedAt: Date.now(),
-    date: new Date().toISOString().slice(0, 10), opponent: '', homeAway: 'home',
+    date: todayISO(), time: '', venue: '', opponent: '', homeAway: 'home',
     gameNo: String((nums.length ? Math.max(...nums) : 0) + 1),
-    attending: activePlayers(team).map((p) => p.id), callUps: [], availability: {},
+    attending: activePlayers(team).map((p) => p.id), attendanceSet: false, callUps: [], availability: {},
     lineup: null, locks: [], options: [], optionIndex: 0, seed: null,
   };
 }
@@ -213,6 +213,36 @@ export function formatDate(iso) {
   if (!iso) return '';
   const d = new Date(`${iso}T12:00:00`);
   return d.toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+// ---- game actions ----
+export const todayISO = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+/** Clears the lineup but keeps opponent, date and who's here. */
+export function resetLineup(game) {
+  Object.assign(game, { lineup: null, locks: [], options: [], optionIndex: 0, seed: null, updatedAt: Date.now() });
+}
+
+export function deleteGame(state, id) {
+  state.games = state.games.filter((g) => g.id !== id);
+}
+
+/** Games from today on, soonest first (scheduled or added by the coach). */
+export function upcomingGames(state, teamId, today = todayISO()) {
+  return state.games.filter((g) => g.teamId === teamId && (g.date || '') >= today)
+    .sort((a, b) => (a.date || '').localeCompare(b.date || '') || (a.time || '').localeCompare(b.time || '') || a.createdAt - b.createdAt);
+}
+
+/** A game the coach started but never generated, that isn't on the league schedule. */
+export const unscheduledDraft = (state, teamId) => state.games.find((g) => g.teamId === teamId && !g.lineup && !g.scheduleKey);
+
+/** Until the coach changes attendance, a game counts everyone on the current roster as here. */
+export function syncAttendance(team, game) {
+  if (game.lineup || game.attendanceSet !== false) return false;
+  const ids = activePlayers(team).map((p) => p.id);
+  if (ids.length === game.attending.length && ids.every((x) => game.attending.includes(x))) return false;
+  game.attending = ids;
+  return true;
 }
 
 export const cellClass = (pos) => (pos == null ? 'out' : pos === SIT ? 'sit' : pos === 'C' ? 'c' : isOutfield(pos) ? 'of' : 'inf');

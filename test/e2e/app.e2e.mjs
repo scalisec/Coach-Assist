@@ -6,6 +6,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import assert from 'node:assert/strict';
+import ExcelJS from 'exceljs';
 
 const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../..');
 const SHOTS = process.env.SHOTS;
@@ -134,7 +135,7 @@ try {
   // saved data survives a reload
   await page.goto(`${base}#/saved`);
   await page.reload();
-  await page.waitForSelector('text=All games');
+  await page.waitForSelector('text=Lineups');
   await shot('10-saved');
   step('saved games persist after reload');
 
@@ -185,8 +186,80 @@ try {
   await page.waitForSelector('[data-test=team-title]');
   assert.equal(await page.textContent('[data-test=team-title]'), 'Expos');
   await page.goto(`${base}#/saved`);
-  await page.waitForSelector('text=All games');
+  await page.waitForSelector('text=Lineups');
   step('back up, erase everything, restore from the first screen');
+
+  // bottom-bar Home always works: from another tab, and again while already on Home (back to top)
+  await page.goto(`${base}#/roster`);
+  await page.waitForSelector('[data-test=add-player]');
+  await page.click('#nav [data-nav=home]');
+  await page.waitForSelector('[data-test=team-title]');
+  await page.evaluate(() => window.scrollTo(0, 400));
+  await page.click('#nav [data-nav=home]');
+  assert.equal(await page.evaluate(() => window.scrollY), 0);
+  await page.goto(`${base}#/`);
+  await page.waitForSelector('[data-test=team-title]');
+  await page.click('#nav [data-nav=roster]');
+  await page.waitForSelector('[data-test=add-player]');
+  await page.click('#nav [data-nav=home]');
+  await page.waitForSelector('[data-test=team-title]');
+  step('bottom-bar Home: from Roster, while on Home (scrolls to top), and from the first screen');
+
+  // league schedule: load the Excel file, games appear, next game is on Home
+  const y = new Date().getFullYear() + 1;
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('9U HL');
+  ws.addRow(['Date', 'Day', 'Start time', 'End Time', 'Home team', 'Visitor team', 'Venue', 'Event', 'Week']);
+  ws.addRow([`05/11/${y}`, 'Tue', '6:15pm', '8:30pm', 'Expos', 'Yankees', 'Kerns Park 2', 'Game', 1]);
+  ws.addRow([`05/13/${y}`, 'Thu', '6:15pm', '8:30pm', 'Rockies', 'Expos', 'Kerns Park 1', 'Game', '']);
+  ws.addRow([`05/14/${y}`, 'Fri', '6:15pm', '8:30pm', 'Dodgers', 'Mets', 'Sweetgrass', 'Game', '']);
+  ws.addRow([`07/28/${y}`, 'Tue', '6:15pm', '8:30pm', '1st', '10th', 'Thorpe Park', 'Game 1', '']);
+  const sched = Buffer.from(await wb.xlsx.writeBuffer());
+  await page.click('#nav [data-nav=saved]');
+  const [schooser] = await Promise.all([page.waitForEvent('filechooser'), page.click('[data-test=load-schedule]')]);
+  await schooser.setFiles({ name: 'Schedule_9U.xlsx', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', buffer: sched });
+  await page.waitForSelector('[data-test=schedule-summary]');
+  assert.match(await page.textContent('[data-test=schedule-summary]'), /2 games for Expos: 1 home, 1 visitor/);
+  await shot('15-schedule-load');
+  await page.click('[data-test=schedule-apply]');
+  await page.waitForSelector('[data-test=upcoming]');
+  assert.equal(await page.locator('[data-test=upcoming] a.row').count(), 2);
+  await shot('16-games');
+  await page.click('#nav [data-nav=home]');
+  await page.waitForSelector('[data-test=next-game]');
+  assert.match(await page.textContent('[data-test=next-game]'), /vs Rockies.*lineup ready/, "today's game comes first");
+  assert.match(await page.textContent('[data-test=upcoming]'), /Game 1 · vs Yankees.*6:15 PM · Kerns Park 2/);
+  await shot('17-home-schedule');
+  step('load the league schedule from Excel → 2 games for Expos, listed under Coming up on Home');
+
+  // build the scheduled game, then reset the lineup, then delete the game
+  await page.locator('[data-test=upcoming] a.row', { hasText: 'Yankees' }).click();
+  await page.waitForSelector('[data-test=opponent]');
+  assert.equal(await page.inputValue('[data-test=opponent]'), 'Yankees');
+  await page.click('[data-test=generate]');
+  await page.waitForSelector('[data-test=fairplay-ok]');
+  await page.click('[data-test=reset-lineup]');
+  await page.locator('dialog button', { hasText: 'Reset lineup' }).click();
+  await page.waitForSelector('[data-test=generate]');
+  assert.match(await page.textContent('[data-test=generate]'), /^Generate lineup$/);
+  step('Reset lineup clears it and goes back to setup (opponent kept)');
+  await page.click('[data-test=generate]');
+  await page.waitForSelector('[data-test=delete-game]');
+  await page.click('[data-test=delete-game]');
+  await page.locator('dialog button', { hasText: 'Delete game' }).click();
+  await page.waitForSelector('[data-test=next-game]');
+  assert.doesNotMatch(await page.textContent('main'), /Yankees/);
+  step('Delete game removes it; Home moves on to the next game');
+
+  // cancel a new game that isn't on the schedule
+  await page.click('[data-test=other-game]');
+  await page.waitForSelector('[data-test=cancel-game]');
+  await page.click('[data-test=cancel-game]');
+  await page.locator('dialog button', { hasText: 'Cancel game' }).click();
+  await page.waitForSelector('[data-test=next-game]');
+  await shot('18-home-after');
+  assert.equal(await page.evaluate(async () => (await import('./src/app/store.js')).store.state.games.filter((g) => !g.lineup && !g.scheduleKey).length), 0);
+  step('Cancel this game removes a new game before it is built');
 
   assert.deepEqual(errors, [], `browser errors: ${errors.join(' | ')}`);
   console.log('All browser checks passed.');

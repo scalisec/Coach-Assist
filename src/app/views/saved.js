@@ -1,8 +1,10 @@
-import { h, header, icon, confirmDialog, toast } from '../ui.js';
+import { h, header, icon, confirmDialog, toast, openSheet, selectField } from '../ui.js';
 import { store, EMPTY_STATE } from '../store.js';
 import { go, rerender } from '../main.js';
-import { currentTeam, teamGames, activePlayers, newGame } from '../model.js';
-import { gamesList } from './home.js';
+import { currentTeam, teamGames, activePlayers, newGame, upcomingGames, deleteGame, formatDate } from '../model.js';
+import { gamesList, upcomingList } from './home.js';
+import { parseScheduleWorkbook, matchTeam, teamSchedule, applySchedule } from '../schedule.js';
+import { loadExcel } from '../files.js';
 import { makeBackup, backupFileName, parseBackup } from '../backup.js';
 import { pickFile, deliverFile } from '../files.js';
 import { APP_VERSION, APP_BUILT } from '../version.js';
@@ -10,6 +12,8 @@ import { APP_VERSION, APP_BUILT } from '../version.js';
 export function savedView() {
   const team = currentTeam(store.state);
   const games = teamGames(store.state, team.id).filter((g) => g.lineup);
+  const ahead = upcomingGames(store.state, team.id).filter((g) => !g.lineup);
+  const scheduled = store.state.games.filter((g) => g.teamId === team.id && g.scheduleKey).length;
 
   const duplicate = (g) => {
     const copy = { ...newGame(store.state, team), opponent: g.opponent, homeAway: g.homeAway, attending: [...g.attending], callUps: structuredClone(g.callUps) };
@@ -18,14 +22,21 @@ export function savedView() {
   };
   const remove = async (g) => {
     if (!(await confirmDialog('Delete this saved lineup?', 'Delete', { danger: true }))) return;
-    store.commit((s) => { s.games = s.games.filter((x) => x.id !== g.id); });
+    store.commit((s) => deleteGame(s, g.id));
     rerender();
   };
 
   const node = h('div', {},
-    header({ title: 'Saved games', sub: `${team.name} · ${games.length} lineup${games.length === 1 ? '' : 's'}` }),
+    header({ title: 'Games', sub: `${team.name} · ${games.length} lineup${games.length === 1 ? '' : 's'}${ahead.length ? ` · ${ahead.length} coming up` : ''}` }),
     h('main', { class: 'page' },
-      games.length ? gamesList(team, games, 'All games') : h('div', { class: 'card empty' }, 'No saved lineups yet. Build one from Home.'),
+      upcomingList(ahead, 'Schedule: lineup not built yet'),
+      h('section', { class: 'card', style: 'display:flex;flex-direction:column;gap:8px' },
+        h('div', { class: 'label' }, 'League schedule'),
+        h('span', { class: 'muted' }, scheduled
+          ? `${scheduled} games loaded${team.scheduleName ? ` for ${team.scheduleName}` : ''}. Load a newer file any time: dates and opponents update, and lineups you made are kept.`
+          : "Load your division's schedule (the convenor's Excel file) and every game is set up for you. Then just mark who's here."),
+        h('button', { class: 'btn', onclick: loadSchedule, 'data-test': 'load-schedule' }, icon('doc'), scheduled ? 'Load a newer schedule' : 'Load schedule from Excel')),
+      games.length ? gamesList(team, games, 'Lineups') : h('div', { class: 'card empty' }, 'No saved lineups yet. Build one from Home.'),
       games.length ? h('section', { class: 'card flush' },
         h('div', { class: 'label', style: 'padding:12px 14px 2px' }, 'Manage'),
         games.map((g) => h('div', { class: 'row' },
@@ -33,6 +44,58 @@ export function savedView() {
           h('button', { class: 'btn', style: 'min-height:40px', onclick: () => duplicate(g) }, 'Reuse'),
           h('button', { class: 'icon-btn', 'aria-label': 'Delete', onclick: () => remove(g) }, icon('trash'))))) : null));
   return { node, nav: 'saved' };
+}
+
+// Interim: the coach loads the schedule file. In stage 4 the convenor publishes it with the league sync.
+export async function loadSchedule() {
+  const file = await pickFile('.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  if (!file) return;
+  let schedule;
+  try {
+    toast('Reading the schedule…');
+    schedule = await parseScheduleWorkbook(await loadExcel(), await file.arrayBuffer());
+  } catch (e) {
+    toast(/zip|central directory|signature/i.test(e.message) ? "That file isn't an Excel (.xlsx) file. Ask your convenor for the Excel version." : e.message);
+    return;
+  }
+  if (!schedule.teams.length) { toast(schedule.problems[0] || 'No games found in that file.'); return; }
+  showSchedulePicker(schedule);
+}
+
+export function showSchedulePicker(schedule) {
+  const team = currentTeam(store.state);
+  let pick = matchTeam(schedule.teams, team.scheduleName || team.name) || '';
+  const tbd = schedule.games.filter((g) => g.tbd).length;
+  const summary = h('p', { style: 'margin:0', 'data-test': 'schedule-summary' });
+  const go1 = h('button', { class: 'btn primary big-btn', 'data-test': 'schedule-apply' });
+  const refresh = () => {
+    const rows = pick ? teamSchedule(schedule, pick) : [];
+    const home = rows.filter((r) => r.homeAway === 'home').length;
+    summary.textContent = pick
+      ? `${rows.length} games for ${pick}: ${home} home, ${rows.length - home} visitor, ${formatDate(rows[0]?.date)} to ${formatDate(rows.at(-1)?.date)}.`
+      : `Which team is ${team.name}?`;
+    go1.textContent = pick ? `Add ${rows.length} games to ${team.name}` : 'Pick your team';
+    go1.disabled = !pick;
+  };
+  openSheet('League schedule', (close) => {
+    go1.onclick = () => {
+      let r;
+      store.commit((s) => { r = applySchedule(s, team, schedule, pick); });
+      close();
+      const parts = [r.added && `${r.added} added`, r.updated && `${r.updated} updated`, r.removed && `${r.removed} removed`, r.kept && `${r.kept} kept (lineup made)`].filter(Boolean);
+      toast(parts.length ? `Schedule loaded: ${parts.join(', ')}` : 'Schedule already up to date');
+      rerender();
+    };
+    refresh();
+    return [
+      h('p', { class: 'muted', style: 'margin:0' }, `Found ${schedule.games.length - tbd} games for ${schedule.teams.length} teams.`),
+      selectField('YOUR TEAM IN THE SCHEDULE', [{ value: '', label: 'Pick a team' }, ...schedule.teams], pick, (v) => { pick = v; refresh(); }, { test: 'schedule-team' }),
+      summary,
+      tbd ? h('p', { class: 'muted', style: 'margin:0' }, `${tbd} playoff game${tbd === 1 ? '' : 's'} with matchups not set yet ${tbd === 1 ? 'is' : 'are'} left out. Add ${tbd === 1 ? 'it' : 'them'} from Home when you know the opponent.`) : null,
+      schedule.problems.length ? h('p', { class: 'muted', style: 'margin:0' }, `${schedule.problems.length} row${schedule.problems.length === 1 ? '' : 's'} skipped (missing date or team).`) : null,
+      go1,
+    ];
+  });
 }
 
 export async function restoreFromFile() {

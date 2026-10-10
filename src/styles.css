@@ -64,6 +64,10 @@ main.page { flex: 1; padding: 14px 16px 20px; display: flex; flex-direction: col
 .btn.gold { background: var(--gold); border-color: var(--gold); color: var(--ink); }
 .btn.danger { background: #fff; border-color: #E8B4B4; color: var(--bad); }
 .btn.big-btn { min-height: 54px; font-size: 17px; width: 100%; }
+.btn.quiet { background: transparent; border-color: transparent; }
+.btn.danger-text { color: var(--bad); }
+.game-actions { display: flex; justify-content: center; }
+.link-btn { background: none; border: none; padding: 6px 0; font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; color: inherit; }
 .btn:disabled { opacity: .55; cursor: not-allowed; }
 .btn-row { display: flex; gap: 10px; }
 .btn-row > * { flex: 1; }
@@ -185,3 +189,4 @@ dialog.center { margin: auto; border-radius: 16px; max-width: 360px; }
   .footer-bar { margin: 0 -24px -28px; }
 }
 .jersey .ico svg { width: 20px; height: 20px; }
+.grid2 > a.card > svg { width: 26px; height: 26px; color: var(--navy); }
