@@ -189,4 +189,4 @@ dialog.center { margin: auto; border-radius: 16px; max-width: 360px; }
   .footer-bar { margin: 0 -24px -28px; }
 }
 .jersey .ico svg { width: 20px; height: 20px; }
-.grid2 > a.card > svg { width: 26px; height: 26px; color: var(--navy); }
+.grid2 > a.card > .ico svg { width: 26px; height: 26px; color: var(--navy); }
