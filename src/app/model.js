@@ -168,6 +168,39 @@ export function summaryRows(team, game, state) {
   });
 }
 
+// Everything the score sheet needs, in the order it is printed (rules 4.4, D11, D13).
+export function scoreSheetData(team, game) {
+  const players = gamePlayers(team, game);
+  const byId = new Map(players.map((p) => [p.id, p]));
+  const T = inningsCount(team);
+  const res = check(team, game);
+  const slots = game.lineup.battingOrder.filter((id) => byId.has(id)).map((id) => {
+    const p = byId.get(id);
+    const pos = Array.from({ length: 7 }, (_, k) => (k < T ? (game.lineup.innings[k]?.[id] ?? '') : ''));
+    return { num: p.jersey || '', name: `${fullName(p)}${p.callUp ? ' (CU)' : ''}`, pos };
+  });
+  const opp = game.opponent || '';
+  return {
+    title: `${team.name} ${gameTitle(game)}${game.gameNo ? ` - Game ${game.gameNo}` : ''} - ${game.date || ''}`,
+    division: `${team.division} HL`,
+    team1: { no: team.teamNo || '', name: team.name },
+    team2: { no: '', name: opp },
+    home: game.homeAway !== 'away',
+    gameNo: game.gameNo || '',
+    date: game.date || '',
+    headCoach: team.headCoach || '',
+    coaches: (team.coaches || []).filter(Boolean),
+    slots,
+    compliant: !!res?.ok,
+    footer: `Prepared with CoachAssist${res?.ok ? ' · fair play checked (BOMBA rules 4.1-4.3)' : ''}`,
+  };
+}
+
+export function scoreSheetFileName(team, game) {
+  const clean = (s) => String(s || '').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  return `${clean(team.name)}-${game.homeAway === 'away' ? 'at' : 'vs'}-${clean(game.opponent || 'Opponent')}${game.gameNo ? `-Game${clean(game.gameNo)}` : ''}-${game.date || ''}.pdf`;
+}
+
 export const displayShort = (p) => [p.first, p.last ? `${p.last[0]}.` : ''].filter(Boolean).join(' ') || `#${p.jersey}`;
 export const fullName = (p) => [p.first, p.last].filter(Boolean).join(' ');
 

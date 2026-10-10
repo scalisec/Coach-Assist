@@ -8,7 +8,9 @@ Stage 2 of 6: **core screens** on top of the rules engine. Data is stored on the
 
 Screens: first run (set up a team or try a sample team), Home, Roster and player editor, Game setup (opponent dropdown, attendance, call-ups), Lineup (live fair-play check, Shuffle, 3 options, edit with swap/lock/undo, Fix for me, batting order, game-day changes), Player summary, Saved games, Settings.
 
-Not yet: Excel import, score sheet PDF, backup (stage 3); league sign-in and updates (stage 4); install/offline (stage 5).
+**Score sheet PDF**: fills the official BOMBA form (assets/score_sheet.pdf) on the device with pdf-lib (src/vendor, MIT): header, batting order, jersey numbers, positions per inning with SIT for bench innings, H/V circled; substitute lines blank; non-compliant lineups are marked "Needs Convenor approval". Share, open to print, or save.
+
+Not yet: Excel import, backup (stage 3); league sign-in and updates (stage 4); install/offline (stage 5).
 
 ### Try it locally
 

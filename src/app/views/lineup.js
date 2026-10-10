@@ -144,7 +144,7 @@ export function lineupView(id) {
         h('span', {}, h('i', { style: 'background:var(--sit-bg)' }), 'Sits')),
       h('div', { class: 'footer-bar' },
         h('a', { class: 'btn', href: `#/game/${id}/summary` }, 'Player summary'),
-        h('button', { class: 'btn primary', onclick: () => toast('Score sheet PDF arrives in the next build stage') }, 'Score sheet PDF'))));
+        h('a', { class: 'btn primary', href: `#/game/${id}/export`, 'data-test': 'to-export' }, 'Score sheet PDF'))));
   return { node, nav: 'lineup', keepScroll: true };
 }
 

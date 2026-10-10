@@ -51,7 +51,7 @@ export function settingsView() {
         h('a', { class: 'row', href: '#/team/new' }, h('span', { class: 'grow' }, h('span', { class: 'title' }, '+ Add a team')))),
       h('section', { class: 'card', style: 'display:flex;flex-direction:column;gap:6px' },
         h('div', { class: 'label' }, 'Coming in the next stages'),
-        h('span', { class: 'muted' }, 'Excel roster import, score sheet PDF, backup and restore, league sign-in and updates, install to home screen.')),
+        h('span', { class: 'muted' }, 'Excel roster import, backup and restore, league sign-in and updates, install to home screen.')),
       h('section', { class: 'card', style: 'display:flex;flex-direction:column;gap:10px' },
         h('div', { class: 'label' }, 'Data on this device'),
         h('span', { class: 'muted' }, 'Rosters and lineups are stored only in this browser.'),

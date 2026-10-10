@@ -23,7 +23,7 @@ const base = `http://localhost:${server.address().port}/`;
 
 const exe = fs.existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined;
 const browser = await chromium.launch({ executablePath: exe });
-const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
+const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, acceptDownloads: true });
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
 page.on('console', (m) => { if (m.type() === 'error' && !/fonts\.(googleapis|gstatic)/.test(m.text()) && !/Failed to load resource/.test(m.text())) errors.push(m.text()); });
@@ -116,6 +116,20 @@ try {
   assert.equal(await page.locator('table.summary tbody tr').count(), 12);
   await shot('09-summary');
   step('player summary');
+
+  // score sheet PDF: built on the device from the official form
+  await page.goBack();
+  await page.waitForSelector('[data-test=to-export]');
+  await page.click('[data-test=to-export]');
+  await page.waitForSelector('[data-test=pdf-status][data-ready=true]', { timeout: 20000 });
+  await shot('09b-export');
+  const [download] = await Promise.all([page.waitForEvent('download'), page.click('[data-test=pdf-download]')]);
+  const pdfPath = await download.path();
+  const head = fs.readFileSync(pdfPath).subarray(0, 5).toString();
+  assert.equal(head, '%PDF-');
+  assert.match(download.suggestedFilename(), /^Expos-vs-Rockies-Game1-\d{4}-\d{2}-\d{2}\.pdf$/);
+  if (SHOTS) fs.copyFileSync(pdfPath, path.join(SHOTS, 'scoresheet.pdf'));
+  step(`score sheet PDF downloads (${download.suggestedFilename()})`);
 
   // saved data survives a reload
   await page.goto(`${base}#/saved`);

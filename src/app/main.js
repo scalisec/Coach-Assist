@@ -9,6 +9,7 @@ import { teamView } from './views/team.js';
 import { gameSetupView } from './views/game.js';
 import { lineupView, summaryView } from './views/lineup.js';
 import { savedView, settingsView } from './views/saved.js';
+import { exportView } from './views/export.js';
 
 const routes = [
   [/^#?\/?$/, () => (store.state.teams.length ? homeView() : welcomeView())],
@@ -18,6 +19,7 @@ const routes = [
   [/^#\/team\/([\w-]+)$/, (id) => teamView(id)],
   [/^#\/game\/([\w-]+)\/setup$/, (id) => gameSetupView(id)],
   [/^#\/game\/([\w-]+)\/summary$/, (id) => summaryView(id)],
+  [/^#\/game\/([\w-]+)\/export$/, (id) => exportView(id)],
   [/^#\/game\/([\w-]+)$/, (id) => lineupView(id)],
   [/^#\/lineup$/, () => latestLineup()],
   [/^#\/saved$/, () => savedView()],
