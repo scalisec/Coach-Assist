@@ -6,7 +6,7 @@ const DB = 'coachassist';
 const STORE = 'kv';
 const KEY = 'state';
 
-export const EMPTY_STATE = () => ({ version: 1, teams: [], games: [], currentTeamId: null });
+export const EMPTY_STATE = () => ({ version: 1, teams: [], games: [], currentTeamId: null, lastBackup: null });
 
 let state = EMPTY_STATE();
 const listeners = new Set();

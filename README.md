@@ -10,7 +10,9 @@ Screens: first run (set up a team or try a sample team), Home, Roster and player
 
 **Score sheet PDF**: fills the official BOMBA form (assets/score_sheet.pdf) on the device with pdf-lib (src/vendor, MIT): header, batting order, jersey numbers, positions per inning with SIT for bench innings, H/V circled; substitute lines blank; non-compliant lineups are marked "Needs Convenor approval". Share, open to print, or save.
 
-Not yet: Excel import, backup (stage 3); league sign-in and updates (stage 4); install/offline (stage 5).
+**Rosters**: import the BOMBA Roster Template (.xlsx) with a row-by-row check and fix screen; save a roster back into the template (ExcelJS, src/vendor, MIT). **Backup**: one .json file with every team, roster and saved lineup; restore from Settings or the first screen.
+
+Not yet: league sign-in and updates (stage 4); install/offline (stage 5).
 
 ### Try it locally
 

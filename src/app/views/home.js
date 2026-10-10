@@ -1,6 +1,7 @@
 import { h, header, icon, openSheet } from '../ui.js';
 import { store } from '../store.js';
 import { go, rerender } from '../main.js';
+import { restoreFromFile } from './saved.js';
 import { currentTeam, activePlayers, teamGames, newGame, sampleTeam, check, gameTitle, formatDate, getDivision } from '../model.js';
 
 export function welcomeView() {
@@ -17,6 +18,7 @@ export function welcomeView() {
     h('div', { class: 'actions' },
       h('a', { class: 'btn light', href: '#/team/new', 'data-test': 'create-team' }, 'Set up my team'),
       h('button', { class: 'btn ghost', onclick: trySample, 'data-test': 'try-sample' }, 'Try it with a sample team'),
+      h('button', { class: 'btn ghost', style: 'min-height:44px;font-size:15px;border:none', onclick: restoreFromFile, 'data-test': 'welcome-restore' }, 'Restore a backup'),
       h('p', { style: 'font-size:13px;text-align:center;margin:4px 0 0' }, 'League sign-in arrives in a later version. For now your team is stored on this device only.')));
   return { node, noNav: true };
 }
@@ -51,8 +53,8 @@ export function homeView({ notice } = {}) {
       h('section', { class: 'card', style: 'display:flex;align-items:center;justify-content:space-between;gap:12px' },
         h('div', {},
           h('div', { class: 'label' }, 'My team'),
-          h('div', { class: 'big', 'data-test': 'team-title' }, team.name),
-          h('div', { class: 'muted' }, `${team.division} HL · ${players.length} players · ${div.innings} innings`)),
+          h('div', { style: 'display:flex;align-items:center;gap:8px' }, h('span', { class: 'big', 'data-test': 'team-title' }, team.name), h('span', { class: 'pill', 'data-test': 'division-pill' }, `${team.division} HL`)),
+          h('div', { class: 'muted' }, `${players.length} players · ${div.innings} innings · ${div.fielders} fielders`)),
         h('button', { class: 'btn', onclick: switchTeam }, 'Switch team')),
       h('section', { class: 'card navy', style: 'display:flex;flex-direction:column;gap:12px' },
         h('div', { class: 'label' }, draft ? 'Game in progress' : 'Next game'),

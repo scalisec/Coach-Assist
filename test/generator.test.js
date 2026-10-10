@@ -166,3 +166,22 @@ test('batting rotation: absent players skipped, newcomers after regulars, late a
   assert.equal(order.at(-2), 20);
   assert.equal(order.at(-1), 30);
 });
+
+test('7U-9U: catchers and the P spot are spread out, not back-to-back (D28, A19)', () => {
+  for (const code of ['7U', '8U', '9U']) {
+    let cRepeats = 0, pRepeats = 0;
+    for (let seed = 0; seed < 60; seed++) {
+      const players = roster(12, () => ({}));
+      const { lineup } = generateLineup({ division: code, players, seed, candidates: 10 });
+      for (const p of players) {
+        const row = lineup.innings.map((r) => r[p.id]);
+        for (let k = 1; k < row.length; k++) {
+          if (row[k] === 'C' && row[k - 1] === 'C') cRepeats++;
+          if (row[k] === 'P' && row[k - 1] === 'P') pRepeats++;
+        }
+      }
+    }
+    assert.equal(cRepeats, 0, `${code}: back-to-back catchers`);
+    assert.ok(pRepeats <= 3, `${code}: ${pRepeats} back-to-back P in 60 games`);
+  }
+});

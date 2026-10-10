@@ -102,3 +102,16 @@ test('next game rotates the batting order from the previous game', () => {
   assert.equal(rows.length, 12);
   assert.ok(rows.every((x) => x.sits === 1 && x.of === 2));
 });
+
+test('backup round-trips and rejects other files', async () => {
+  const { makeBackup, parseBackup } = await import('../src/app/backup.js');
+  const { team, state, game } = setup();
+  game.lineup = generateFor(state, team, game, { seed: 9 }).lineup;
+  const r = parseBackup(makeBackup(state));
+  assert.equal(r.ok, true);
+  assert.deepEqual(r.state.teams, state.teams);
+  assert.deepEqual(r.state.games, state.games);
+  assert.match(r.summary, /1 team, 12 players, 1 saved lineups/);
+  assert.equal(parseBackup('{"hello":1}').ok, false);
+  assert.equal(parseBackup('not json').ok, false);
+});

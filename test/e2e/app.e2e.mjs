@@ -150,9 +150,40 @@ try {
   await shot('12-roster');
   step('add a player to the roster');
 
+  // roster to Excel and back
+  const [xdl] = await Promise.all([page.waitForEvent('download'), page.click('[data-test=save-excel]')]);
+  const xlsx = await xdl.path();
+  assert.equal(fs.readFileSync(xlsx).subarray(0, 2).toString(), 'PK');
+  assert.equal(xdl.suggestedFilename(), 'Expos-Roster.xlsx');
+  const [chooser] = await Promise.all([page.waitForEvent('filechooser'), page.click('[data-test=import-excel]')]);
+  await chooser.setFiles({ name: 'Expos-Roster.xlsx', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', buffer: fs.readFileSync(xlsx) });
+  await page.waitForSelector('[data-test=import-ready]');
+  assert.equal(await page.textContent('[data-test=import-ready]'), '0', 'adding the same players again flags every jersey as a duplicate');
+  await page.locator('.segmented button', { hasText: 'New roster' }).click();
+  await page.waitForSelector('[data-test=import-ready]:text("13")');
+  await shot('13-import');
+  await page.click('[data-test=import-go]');
+  await page.waitForSelector('text=13 players');
+  step('save roster to Excel, import it back as a new roster (13 players)');
+
+  // backup, erase, restore on a "new phone"
   await page.goto(`${base}#/settings`);
   await page.waitForSelector('text=Teams on this device');
-  await shot('13-settings');
+  await shot('14-settings');
+  const [bdl] = await Promise.all([page.waitForEvent('download'), page.click('[data-test=backup]')]);
+  const backupBytes = fs.readFileSync(await bdl.path());
+  assert.match(bdl.suggestedFilename(), /^CoachAssist-backup-\d{4}-\d{2}-\d{2}\.json$/);
+  await page.click('text=Erase all data on this device');
+  await page.locator('dialog button', { hasText: 'Erase everything' }).click();
+  await page.waitForSelector('[data-test=welcome-restore]');
+  const [bchooser] = await Promise.all([page.waitForEvent('filechooser'), page.click('[data-test=welcome-restore]')]);
+  await bchooser.setFiles({ name: bdl.suggestedFilename(), mimeType: 'application/json', buffer: backupBytes });
+  await page.locator('dialog button', { hasText: 'Restore' }).click();
+  await page.waitForSelector('[data-test=team-title]');
+  assert.equal(await page.textContent('[data-test=team-title]'), 'Expos');
+  await page.goto(`${base}#/saved`);
+  await page.waitForSelector('text=All games');
+  step('back up, erase everything, restore from the first screen');
 
   assert.deepEqual(errors, [], `browser errors: ${errors.join(' | ')}`);
   console.log('All browser checks passed.');

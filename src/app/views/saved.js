@@ -3,6 +3,8 @@ import { store, EMPTY_STATE } from '../store.js';
 import { go, rerender } from '../main.js';
 import { currentTeam, teamGames, activePlayers, newGame } from '../model.js';
 import { gamesList } from './home.js';
+import { makeBackup, backupFileName, parseBackup } from '../backup.js';
+import { pickFile, deliverFile } from '../files.js';
 
 export function savedView() {
   const team = currentTeam(store.state);
@@ -32,6 +34,19 @@ export function savedView() {
   return { node, nav: 'saved' };
 }
 
+export async function restoreFromFile() {
+  const file = await pickFile('.json,application/json');
+  if (!file) return;
+  const r = parseBackup(await file.text());
+  if (!r.ok) { toast(r.message); return; }
+  const when = r.exportedAt ? new Date(r.exportedAt).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' }) : 'an earlier date';
+  const replacing = store.state.teams.length ? 'Replace everything on this device with' : 'Restore';
+  if (!(await confirmDialog(`${replacing} the backup from ${when} (${r.summary})?`, 'Restore', { danger: store.state.teams.length > 0 }))) return;
+  store.replace(r.state);
+  toast('Backup restored');
+  go('#/home');
+}
+
 export function settingsView() {
   const team = currentTeam(store.state);
   const clearAll = async () => {
@@ -40,6 +55,17 @@ export function settingsView() {
     toast('All data erased');
     go('#/');
   };
+  const backup = async () => {
+    const now = new Date();
+    store.commit((s) => { s.lastBackup = now.getTime(); });
+    const how = await deliverFile(new Blob([makeBackup(store.state, now)]), backupFileName(now), 'application/json');
+    toast(how === 'shared' ? 'Backup shared' : 'Backup saved to your downloads');
+    rerender();
+  };
+  const restore = restoreFromFile;
+  const last = store.state.lastBackup;
+  const stale = !last || Date.now() - last > 30 * 864e5;
+
   const node = h('div', {},
     header({ title: 'Settings', sub: 'CoachAssist' }),
     h('main', { class: 'page' },
@@ -51,11 +77,19 @@ export function settingsView() {
         h('a', { class: 'row', href: '#/team/new' }, h('span', { class: 'grow' }, h('span', { class: 'title' }, '+ Add a team')))),
       h('section', { class: 'card', style: 'display:flex;flex-direction:column;gap:6px' },
         h('div', { class: 'label' }, 'Coming in the next stages'),
-        h('span', { class: 'muted' }, 'Excel roster import, backup and restore, league sign-in and updates, install to home screen.')),
+        h('span', { class: 'muted' }, 'League sign-in and updates, install to home screen.')),
+      h('section', { class: 'card', style: 'display:flex;flex-direction:column;gap:10px' },
+        h('div', { class: 'label' }, 'Backup'),
+        h('span', { class: 'muted' }, last ? `Last backup ${new Date(last).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })}.` : 'No backup yet.'),
+        stale ? h('div', { class: 'banner warn' }, icon('alert'), h('div', { class: 'grow' }, 'Back up now and then, so a lost or replaced phone doesn\'t lose your rosters and lineups.')) : null,
+        h('div', { class: 'btn-row' },
+          h('button', { class: 'btn primary', onclick: backup, 'data-test': 'backup' }, 'Back up'),
+          h('button', { class: 'btn', onclick: restore, 'data-test': 'restore' }, 'Restore')),
+        h('span', { class: 'muted' }, 'A backup is one file with every team, roster and saved lineup. Restore it on any phone or computer.')),
       h('section', { class: 'card', style: 'display:flex;flex-direction:column;gap:10px' },
         h('div', { class: 'label' }, 'Data on this device'),
         h('span', { class: 'muted' }, 'Rosters and lineups are stored only in this browser.'),
         h('button', { class: 'btn danger', onclick: clearAll }, 'Erase all data on this device')),
-      h('p', { class: 'muted', style: 'text-align:center;margin:4px 0' }, 'CoachAssist · stage 2 preview · BOMBA Rules 2026')));
+      h('p', { class: 'muted', style: 'text-align:center;margin:4px 0' }, 'CoachAssist · preview · BOMBA Rules 2026')));
   return { node, nav: 'settings' };
 }

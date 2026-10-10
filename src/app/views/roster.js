@@ -2,6 +2,7 @@ import { h, header, icon, inputField, toast, confirmDialog } from '../ui.js';
 import { store } from '../store.js';
 import { go, rerender } from '../main.js';
 import { currentTeam, activePlayers, newPlayer, fullName, ALL_POSITIONS, getDivision } from '../model.js';
+import { startImport, saveRosterToExcel } from './import.js';
 
 export function rosterView() {
   const team = currentTeam(store.state);
@@ -10,7 +11,9 @@ export function rosterView() {
     header({ title: 'Roster', sub: `${team.name} · ${team.division} HL`, right: h('span', { class: 'pill' }, `${players.length} players`) }),
     h('main', { class: 'page' },
       h('div', { class: 'btn-row' },
-        h('a', { class: 'btn primary', href: '#/player/new', 'data-test': 'add-player' }, icon('plus'), 'Add player')),
+        h('a', { class: 'btn primary', href: '#/player/new', 'data-test': 'add-player' }, icon('plus'), 'Add player'),
+        h('button', { class: 'btn', onclick: startImport, 'data-test': 'import-excel' }, 'Import from Excel')),
+      players.length ? h('button', { class: 'btn', onclick: saveRosterToExcel, 'data-test': 'save-excel' }, icon('doc'), 'Save roster to Excel') : null,
       players.length
         ? h('section', { class: 'card flush' }, players.map((p) => h('a', { class: 'row', href: `#/player/${p.id}` },
           h('span', { class: 'jersey' }, p.jersey || '–'),

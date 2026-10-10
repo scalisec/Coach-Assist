@@ -165,7 +165,10 @@ function attemptOnce(div, players, locks, rng) {
     }
   }
 
-  // 3) Catchers: within the catch max (and the combined max), back-to-back pairs where possible (A8).
+  // 3) Catchers: within the catch max (and the combined max).
+  //    7U-9U: spread out, a different catcher each inning where possible (D28).
+  //    11U and up: back-to-back where possible, like pitchers (A8).
+  const pairCatchers = div.playerPitching;
   for (let k = 0; k < T; k++) {
     const locked = holderOf(k, 'C');
     let pick = locked != null ? realId(locked) : null;
@@ -173,9 +176,10 @@ function attemptOnce(div, players, locks, rng) {
       const ok = (p) => canCatchHere(div, p) && isPresent(p, k, T) && catches.get(p.id) < div.catchMax &&
         pitcher[k] !== p.id && free(k, p.id) && comboLeft(div, p.id, catches, pitches) > 0;
       const prev = k > 0 ? catcher[k - 1] : null;
-      if (prev != null && ok(byId.get(prev)) && rng.next() < 0.7) pick = prev;
+      if (pairCatchers && prev != null && ok(byId.get(prev)) && rng.next() < 0.7) pick = prev;
       else {
         let pool = presentAt(k).filter(ok);
+        if (!pairCatchers && pool.some((p) => p.id !== prev)) pool = pool.filter((p) => p.id !== prev);
         if (!pool.length) return { ok: false, reason: 'catchers' };
         const fewest = Math.min(...pool.map((p) => catches.get(p.id)));
         pool = pool.filter((p) => catches.get(p.id) === fewest);
@@ -255,24 +259,28 @@ function assign(group, positions, prevRow, rng, noCallUpPitching) {
   return bt(0) ? out : null;
 }
 
-// Soft goals: variety, preferences, catcher pairs, balanced infield/outfield time.
+// Soft goals: variety, preferences, balanced infield/outfield time.
+// Where players really pitch (11U and up) a pitcher or catcher staying on is good (rule: pitching
+// innings back-to-back; fewer gear changes). In 7U-9U, C and P are spread like any spot (D28, A19).
 function scoreLineup(div, players, innings) {
   let score = 0;
-  const inf = new Map(), of = new Map();
-  for (const p of players) { inf.set(p.id, 0); of.set(p.id, 0); }
+  const inf = new Map(), of = new Map(), pAt = new Map(), cAt = new Map();
+  for (const p of players) { inf.set(p.id, 0); of.set(p.id, 0); pAt.set(p.id, 0); cAt.set(p.id, 0); }
   innings.forEach((row, k) => {
     for (const p of players) {
       const pos = row[p.id];
       if (pos == null || pos === SIT) continue;
       if (k > 0 && innings[k - 1][p.id] === pos) {
-        // a catcher or pitcher staying on is good (fewer gear changes); anyone else repeating is not
-        score += pos === 'C' || pos === 'P' ? 1 : -3;
+        score += (pos === 'C' || pos === 'P') && div.playerPitching ? 1 : -3;
       }
       if (prefers(p, pos)) score += 2;
+      if (pos === 'P') pAt.set(p.id, pAt.get(p.id) + 1);
+      if (pos === 'C') cAt.set(p.id, cAt.get(p.id) + 1);
       if (isOutfield(pos)) of.set(p.id, of.get(p.id) + 1); else inf.set(p.id, inf.get(p.id) + 1);
     }
   });
   score -= variance([...inf.values()]) * 2 + variance([...of.values()]) * 2;
+  if (!div.playerPitching) score -= (variance([...pAt.values()]) + variance([...cAt.values()])) * 4;
   return score;
 }
 
