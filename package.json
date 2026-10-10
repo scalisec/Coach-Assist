@@ -1,6 +1,6 @@
 {
   "name": "coach-assist",
-  "version": "0.1.0",
+  "version": "0.4.1",
   "private": true,
   "description": "CoachAssist: fair-play lineup generator for BOMBA house-league coaches",
   "type": "module",

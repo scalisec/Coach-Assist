@@ -115,3 +115,12 @@ test('backup round-trips and rejects other files', async () => {
   assert.equal(parseBackup('{"hello":1}').ok, false);
   assert.equal(parseBackup('not json').ok, false);
 });
+
+test('version numbers agree across app, version.json and package.json', async () => {
+  const fs = await import('node:fs');
+  const { APP_VERSION } = await import('../src/app/version.js');
+  const vj = JSON.parse(fs.readFileSync(new URL('../version.json', import.meta.url)));
+  const pkg = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url)));
+  assert.equal(vj.version, APP_VERSION);
+  assert.equal(pkg.version, APP_VERSION);
+});

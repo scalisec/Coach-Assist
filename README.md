@@ -2,6 +2,18 @@
 
 Fair-play lineup generator for BOMBA house-league volunteer coaches. Repository: scalisec/Coach-Assist.
 
+## Version
+
+The current version is in `version.json` and shown in the app under Settings ▸ About, which also says whether a newer version is published.
+
+| Version | Date | What changed |
+| --- | --- | --- |
+| 0.4.1 | 2026-10-09 | Version number and update check in Settings |
+| 0.4.0 | 2026-10-09 | Excel roster import/export, backup/restore, catchers and P spread in 7U–9U |
+| 0.3.0 | 2026-10-09 | Score sheet PDF |
+| 0.2.0 | 2026-10-09 | Core screens |
+| 0.1.0 | 2026-10-09 | Rules engine |
+
 ## Status
 
 Stage 2 of 6: **core screens** on top of the rules engine. Data is stored on the device only.

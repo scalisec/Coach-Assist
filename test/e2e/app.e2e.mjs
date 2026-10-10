@@ -170,6 +170,9 @@ try {
   await page.goto(`${base}#/settings`);
   await page.waitForSelector('text=Teams on this device');
   await shot('14-settings');
+  assert.match(await page.textContent('[data-test=app-version]'), /^CoachAssist v\d+\.\d+\.\d+$/);
+  await page.waitForSelector('[data-test=latest-version]:text("You have the latest version.")');
+  step('Settings shows the version and confirms it is the latest');
   const [bdl] = await Promise.all([page.waitForEvent('download'), page.click('[data-test=backup]')]);
   const backupBytes = fs.readFileSync(await bdl.path());
   assert.match(bdl.suggestedFilename(), /^CoachAssist-backup-\d{4}-\d{2}-\d{2}\.json$/);

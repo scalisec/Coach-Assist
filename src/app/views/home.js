@@ -2,6 +2,7 @@ import { h, header, icon, openSheet } from '../ui.js';
 import { store } from '../store.js';
 import { go, rerender } from '../main.js';
 import { restoreFromFile } from './saved.js';
+import { APP_VERSION } from '../version.js';
 import { currentTeam, activePlayers, teamGames, newGame, sampleTeam, check, gameTitle, formatDate, getDivision } from '../model.js';
 
 export function welcomeView() {
@@ -19,7 +20,8 @@ export function welcomeView() {
       h('a', { class: 'btn light', href: '#/team/new', 'data-test': 'create-team' }, 'Set up my team'),
       h('button', { class: 'btn ghost', onclick: trySample, 'data-test': 'try-sample' }, 'Try it with a sample team'),
       h('button', { class: 'btn ghost', style: 'min-height:44px;font-size:15px;border:none', onclick: restoreFromFile, 'data-test': 'welcome-restore' }, 'Restore a backup'),
-      h('p', { style: 'font-size:13px;text-align:center;margin:4px 0 0' }, 'League sign-in arrives in a later version. For now your team is stored on this device only.')));
+      h('p', { style: 'font-size:13px;text-align:center;margin:4px 0 0' }, 'League sign-in arrives in a later version. For now your team is stored on this device only.'),
+      h('p', { style: 'font-size:12px;text-align:center;margin:0;opacity:.7' }, `Version ${APP_VERSION}`)));
   return { node, noNav: true };
 }
 

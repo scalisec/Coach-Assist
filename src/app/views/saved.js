@@ -5,6 +5,7 @@ import { currentTeam, teamGames, activePlayers, newGame } from '../model.js';
 import { gamesList } from './home.js';
 import { makeBackup, backupFileName, parseBackup } from '../backup.js';
 import { pickFile, deliverFile } from '../files.js';
+import { APP_VERSION, APP_BUILT } from '../version.js';
 
 export function savedView() {
   const team = currentTeam(store.state);
@@ -67,7 +68,7 @@ export function settingsView() {
   const stale = !last || Date.now() - last > 30 * 864e5;
 
   const node = h('div', {},
-    header({ title: 'Settings', sub: 'CoachAssist' }),
+    header({ title: 'Settings', sub: `CoachAssist v${APP_VERSION}` }),
     h('main', { class: 'page' },
       h('section', { class: 'card flush' },
         h('div', { class: 'label', style: 'padding:12px 14px 2px' }, 'Teams on this device'),
@@ -90,6 +91,32 @@ export function settingsView() {
         h('div', { class: 'label' }, 'Data on this device'),
         h('span', { class: 'muted' }, 'Rosters and lineups are stored only in this browser.'),
         h('button', { class: 'btn danger', onclick: clearAll }, 'Erase all data on this device')),
-      h('p', { class: 'muted', style: 'text-align:center;margin:4px 0' }, 'CoachAssist · preview · BOMBA Rules 2026')));
+      versionCard()));
   return { node, nav: 'settings' };
 }
+
+// Version check: compares this copy with the latest one published on the website.
+function versionCard() {
+  const status = h('span', { class: 'muted', 'data-test': 'latest-version' }, 'Checking for a newer version…');
+  const reload = h('button', { class: 'btn primary', hidden: true, onclick: () => location.reload() }, 'Load the latest version');
+  fetch(`version.json?t=${Date.now()}`, { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).then((v) => {
+    if (!v?.version) { status.textContent = "Couldn't check for updates (offline?)."; return; }
+    if (newer(v.version, APP_VERSION)) {
+      status.textContent = `Version ${v.version} is available.`;
+      reload.hidden = false;
+    } else status.textContent = 'You have the latest version.';
+  }).catch(() => { status.textContent = "Couldn't check for updates (offline?)."; });
+  return h('section', { class: 'card', style: 'display:flex;flex-direction:column;gap:8px' },
+    h('div', { class: 'label' }, 'About'),
+    h('div', { style: 'display:flex;justify-content:space-between;align-items:baseline;gap:8px' },
+      h('b', { 'data-test': 'app-version' }, `CoachAssist v${APP_VERSION}`),
+      h('span', { class: 'muted' }, `Built ${APP_BUILT}`)),
+    status, reload,
+    h('span', { class: 'muted' }, 'Follows the BOMBA Rules (amended 2026).'));
+}
+
+const newer = (a, b) => {
+  const pa = a.split('.').map(Number), pb = b.split('.').map(Number);
+  for (let i = 0; i < 3; i++) { if ((pa[i] || 0) !== (pb[i] || 0)) return (pa[i] || 0) > (pb[i] || 0); }
+  return false;
+};
