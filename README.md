@@ -4,7 +4,17 @@ Fair-play lineup generator for BOMBA house-league volunteer coaches. Repository:
 
 ## Status
 
-Stage 1 of 6: **rules engine** (no screens yet).
+Stage 2 of 6: **core screens** on top of the rules engine. Data is stored on the device only.
+
+Screens: first run (set up a team or try a sample team), Home, Roster and player editor, Game setup (opponent dropdown, attendance, call-ups), Lineup (live fair-play check, Shuffle, 3 options, edit with swap/lock/undo, Fix for me, batting order, game-day changes), Player summary, Saved games, Settings.
+
+Not yet: Excel import, score sheet PDF, backup (stage 3); league sign-in and updates (stage 4); install/offline (stage 5).
+
+### Try it locally
+
+```
+python3 -m http.server 8080   # then open http://localhost:8080
+```
 
 | Part | File | What it does |
 | --- | --- | --- |
@@ -18,11 +28,12 @@ Rule interpretations follow the project's Decisions & Assumptions Log (D1–D25,
 ## Tests
 
 ```
-npm test            # 60 seeds per division and roster size (~10 s)
+npm test            # engine + app model; 60 seeds per division and roster size (~15 s)
 npm run test:full   # 1,000 seeds: 60,000 generated lineups (~2 min)
+npm run test:ui     # end-to-end in Chromium at phone size (needs `npm install` for Playwright)
 ```
 
-Requires Node 18 or later. No dependencies.
+Requires Node 18 or later. The app itself has no dependencies or build step.
 
 ## Use
 
