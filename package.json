@@ -1,13 +1,14 @@
 {
   "name": "coach-assist",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "private": true,
   "description": "CoachAssist: fair-play lineup generator for BOMBA house-league coaches",
   "type": "module",
   "scripts": {
     "test": "node --test \"test/*.test.js\"",
     "test:full": "FULL=1 node --test \"test/*.test.js\"",
-    "test:ui": "node test/e2e/app.e2e.mjs"
+    "test:ui": "node test/e2e/app.e2e.mjs",
+    "stamp": "node scripts/stamp-version.mjs"
   },
   "engines": {
     "node": ">=18"

@@ -4,10 +4,13 @@ Fair-play lineup generator for BOMBA house-league volunteer coaches. Repository:
 
 ## Version
 
+Releasing: bump the version in `src/app/version.js`, `version.json` and `package.json`, then run `npm run stamp`.
+
 The current version is in `version.json` and shown in the app under Settings ▸ About, which also says whether a newer version is published.
 
 | Version | Date | What changed |
 | --- | --- | --- |
+| 0.4.2 | 2026-10-09 | Phones always load the newest files after a release (versioned file links) |
 | 0.4.1 | 2026-10-09 | Version number and update check in Settings |
 | 0.4.0 | 2026-10-09 | Excel roster import/export, backup/restore, catchers and P spread in 7U–9U |
 | 0.3.0 | 2026-10-09 | Score sheet PDF |

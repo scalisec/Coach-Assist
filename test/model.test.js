@@ -124,3 +124,16 @@ test('version numbers agree across app, version.json and package.json', async ()
   assert.equal(vj.version, APP_VERSION);
   assert.equal(pkg.version, APP_VERSION);
 });
+
+test('index.html loads every app file with the current version (npm run stamp)', async () => {
+  const fs = await import('node:fs');
+  const { APP_VERSION } = await import('../src/app/version.js');
+  const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const map = JSON.parse(html.match(/<script type="importmap" id="versions">([\s\S]*?)<\/script>/)[1]);
+  const versions = new Set(Object.values(map.imports).map((u) => u.split('?v=')[1]));
+  assert.deepEqual([...versions], [APP_VERSION], 'run npm run stamp after bumping the version');
+  assert.ok(html.includes(`src/app/main.js?v=${APP_VERSION}`));
+  const listed = Object.keys(map.imports).length;
+  const walk = (d) => fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? (e.name === 'vendor' ? [] : walk(`${d}/${e.name}`)) : e.name.endsWith('.js') ? [e] : []));
+  assert.equal(listed, walk(new URL('../src', import.meta.url).pathname).length, 'every app file is in the import map');
+});
