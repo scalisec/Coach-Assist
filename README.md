@@ -1,6 +1,6 @@
-# BOMBA Lineup Helper
+# CoachAssist
 
-Fair-play lineup generator for BOMBA house-league volunteer coaches.
+Fair-play lineup generator for BOMBA house-league volunteer coaches. Repository: scalisec/Coach-Assist.
 
 ## Status
 

@@ -1,8 +1,8 @@
 {
-  "name": "bomba-lineup-helper",
+  "name": "coach-assist",
   "version": "0.1.0",
   "private": true,
-  "description": "Fair-play lineup generator for BOMBA house-league coaches",
+  "description": "CoachAssist: fair-play lineup generator for BOMBA house-league coaches",
   "type": "module",
   "scripts": {
     "test": "node --test \"test/*.test.js\"",
